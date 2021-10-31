@@ -1,6 +1,9 @@
 // classes you may find useful.  Feel free to change them if you don't like the way
 // they are set up.
 
+//import { Ray } from "three";
+import { degToRad } from "three/src/math/MathUtils";
+
 export class Vector {
     constructor(public x: number,
                 public y: number,
@@ -44,9 +47,77 @@ export class Color {
     }
 }
 
+class Sphere {
+    radius: number;
+    center: Vector;
+    kd: Color;
+    ka: number; //k_ambient
+    ks: number; //k_specular
+    specular_pow: number; //pi
+
+    constructor(r: number, center: Vector, kd: Color, 
+        k_ambient: number, k_specular: number, specular_pow: number) {
+        this.radius = r;
+        this.center = center;
+        this.kd = kd
+        this.ka = k_ambient;
+        this.ks = k_specular;
+        this.specular_pow = specular_pow;
+    }
+
+    collide(ray: Ray): number {
+        let d = ray.dir
+        let c = this.center
+        let e = ray.start
+        let R = this.radius
+        //(d⋅(e−c))2−(d⋅d)((e−c)⋅(e−c)−R2)
+        let e_c = Vector.minus(e,c)      
+        let b = Vector.dot(d, e_c)
+        let delta = b * b - Vector.dot(d, d)* (Vector.dot(e_c, e_c) - R*R)
+        if (delta < 0) {
+            return NaN;
+        }
+        let t1 = (-b + Math.sqrt(delta)) / Vector.dot(d, d)
+        let t2 = (-b - Math.sqrt(delta)) / Vector.dot(d, d)
+        if (t1 < 0 && t2 < 0) {return NaN;}
+        else if (t1 > 0 && t2 > 0) {return Math.min(t1, t2);}
+        else {return Math.max(t1, t2);}
+    }
+
+    getColor(t: number, ray: Ray, lights: Light[], Ia: Color): Color {
+        let pos = Vector.plus(ray.start,Vector.times(t, ray.dir))
+        let N = Vector.norm(Vector.minus(pos, this.center))
+        let V = Vector.norm(Vector.minus(ray.start,pos))
+        let sum = new Color(0,0,0)
+        lights.forEach(light => {
+            let Li = Vector.norm(Vector.minus(light.pos, pos))
+            //2 * N . L * N - L
+            let Ri = Vector.norm(Vector.minus(Vector.times(2*Vector.dot(N, Li), N), Li))
+            let diffuseTerm = Vector.dot(N, Li) < 0? new Color(0,0,0): 
+                                Color.scale(Vector.dot(N, Li), Color.times(light.color, this.kd))
+            //console.log(Vector.dot(Ri, V), this.specular_pow) 
+            let specularTerm = Vector.dot(Ri, V) < 0? new Color(0,0,0): 
+                                Color.scale(this.ks * Math.pow(Vector.dot(Ri, V), this.specular_pow), light.color) 
+            //console.log(Vector.dot(Ri, V), " * ", this.ks, " * ", light.color, " = ", specularTerm, sum)
+            sum = Color.plus(sum, diffuseTerm)
+            sum = Color.plus(sum, specularTerm)
+            console.log("= ", sum)
+        });
+        sum = Color.plus(sum, Color.times(Color.scale(this.ka, Ia), this.kd))
+        //console.log(sum)
+        return sum;
+    }
+}
+    
+
 interface Ray {
     start: Vector;
     dir: Vector;
+}
+
+interface Light {
+    pos: Vector,
+    color: Color
 }
 
 
@@ -62,6 +133,17 @@ class RayTracer {
 
     // initial color we'll use for the canvas
     canvasColor = "lightyellow"
+    backgroundColor = new Color(0, 0, 0) //init to black
+    
+    //new class variables 
+    spheres: Sphere[] = [];
+    cameraPos: Vector = new Vector(0,0,0); 
+    lookAtVec: Vector = new Vector(0,0,1);  
+    upVec: Vector = new Vector(0,1,0); 
+    fov: number = 90 //in degree
+
+    Ia: Color = new Color(0,0,0); //ambient light color
+    lights: Light[] = [];
 
     canv: HTMLCanvasElement
     ctx: CanvasRenderingContext2D 
@@ -95,23 +177,37 @@ class RayTracer {
 
     // clear out all scene contents
     reset_scene() {
+        this.set_fov(90);
+        this.set_eye(0,0,0, 0,0,-1, 0,1,0)
+        this.spheres = []
+        this.lights = []
+        this.Ia = Color.black
     }
 
     // create a new point light source
     new_light (r: number, g: number, b: number, x: number, y: number, z: number) {
+        let lightCnt = this.lights.length
+        let currLight: Light = {
+            pos: new Vector(x, y, z),
+            color: new Color(r, g, b)
+        };
+        this.lights[lightCnt] = currLight;
     }
 
     // set value of ambient light source
     ambient_light (r: number, g: number, b: number) {
+        this.Ia = new Color(r,g,b)
     }
 
     // set the background color for the scene
     set_background (r: number, g: number, b: number) {
+        this.backgroundColor = new Color(r, g, b);
     }
 
     // set the field of view
     DEG2RAD = (Math.PI/180)
     set_fov (theta: number) {
+        this.fov = theta
     }
 
     // set the virtual camera's position and orientation
@@ -121,21 +217,65 @@ class RayTracer {
     set_eye(x1: number, y1: number, z1: number, 
             x2: number, y2: number, z2: number, 
             x3: number, y3: number, z3: number) {
+                this.cameraPos = new Vector(x1, y1, z1) 
+                let lookUpPos = new Vector(x2, y2, z2)
+                this.lookAtVec = Vector.norm(Vector.minus(this.cameraPos, lookUpPos))
+                this.upVec = Vector.norm(new Vector(x3, y3, z3))
     }
 
     // create a new sphere
     new_sphere (x: number, y: number, z: number, radius: number, 
                 dr: number, dg: number, db: number, 
                 k_ambient: number, k_specular: number, specular_pow: number) {
+                    let spCnt = this.spheres.length
+                    let sp = new Sphere(radius, new Vector(x,y,z), new Color(dr, dg, db), k_ambient, k_specular, specular_pow)
+                    this.spheres[spCnt] = sp
     }
 
     // INTERNAL METHODS YOU MUST IMPLEMENT
 
     // create an eye ray based on the current pixel's position
     private eyeRay(i: number, j: number): Ray {
+        let d = 1/Math.tan(this.fov*this.DEG2RAD/2)
+        let us = -1 + 2*i/this.screenWidth // left to right
+        let u = Vector.cross(this.upVec, this.lookAtVec) //y corss z = x
+        let vs = 1 - 2*j/this.screenHeight * this.height/ this.width
+
+        //console.log(this.lookAtVec, this.upVec)
+        // -dW + usU + vsV
+        let dw = Vector.times(-d, this.lookAtVec)
+        let usU = Vector.times(us, u)
+        let vsV = Vector.times(vs, this.upVec)
+        let dir = Vector.plus(Vector.plus(dw, usU), vsV)
+        //console.log(dir)
+        let ray: Ray = {
+            start: this.cameraPos,
+            dir: Vector.norm(dir)
+        };
+        return ray 
     }
 
     private traceRay(ray: Ray, depth: number = 0): Color {
+        if (this.spheres.length == 0) {
+            return this.backgroundColor
+        }
+        var t = Number.MAX_VALUE;
+        var sphereidx = -1;
+        // find the closest valid time t
+        for (let i = 0; i < this.spheres.length; i++) {
+            let currsp = this.spheres[i];
+            let time = currsp.collide(ray)
+            //console.log(time)
+            
+            // iff collide
+            if (!Number.isNaN(time)) {
+                if (time < t) {
+                    t = time;
+                    sphereidx = i
+                }
+            }
+        }
+        return sphereidx < 0? this.backgroundColor: this.spheres[sphereidx].getColor(t, ray, this.lights, this.Ia)
     }
 
     // draw_scene is provided to create the image from the ray traced colors. 
@@ -180,7 +320,6 @@ class RayTracer {
     clear_screen() {
         this.ctx.fillStyle = this.canvasColor;
         this.ctx.fillRect(0, 0, this.canv.width, this.canv.height);
-
     }
 }
 export {RayTracer}
