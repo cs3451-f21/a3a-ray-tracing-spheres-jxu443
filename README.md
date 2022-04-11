@@ -87,7 +87,5 @@ The sample project is set up with a 500x500 pixel canvas, but only renders 100x1
 2. run with ```npm run dev```
 3. visit ```http://localhost:3000/index.html```
 
-Please test that your submission meets these requirements.  For example, after you check in your final version of the assignment to github, check it out again to a new directory and make sure everything builds and runs correctly.
-
 # Recources
 base code: https://github.com/cs3451-f21/a3a-ray-tracing-spheres-vsantino720 from Gatech CS3451
