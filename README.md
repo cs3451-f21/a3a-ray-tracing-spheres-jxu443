@@ -3,7 +3,7 @@
 
 This project is to write a ray tracing renderer. I wrote a collection of Javascript functions that, when called, create a 3D scene and produce 2D images of the scene. One of the functions initializes the scene, others create objects, lights and a virtual camera, and one additional function determines the color of a ray cast into the scene, that will be used to render the scene into a 2D image. 
 
-This is the first half of a two-part project. For this first part you will cast eye rays into the scene for each pixel, test these rays for intersection with sphere objects, and then use the the Lambertian shading equation (ambient + diffuse + specular) to find the color for each pixel. In the second half of the project, [![A3b]](https://github.com/cs3451-f21/assignment-3b-disks-area-lights-and-distribution-jxu443), I expanded my Ray Tracer to detect intersections between rays and disks. I also expanded my shading function to cast shadows, reflected rays, support area lights, and implement distribution raytracing.
+This is the first half of a two-part project. For this first part you will cast eye rays into the scene for each pixel, test these rays for intersection with sphere objects, and then use the the Lambertian shading equation (ambient + diffuse + specular) to find the color for each pixel. In the second half of the project, ![A3b](https://github.com/cs3451-f21/assignment-3b-disks-area-lights-and-distribution-jxu443), I expanded my Ray Tracer to detect intersections between rays and disks. I also expanded my shading function to cast shadows, reflected rays, support area lights, and implement distribution raytracing.
 
 ## Objectives
 
@@ -66,20 +66,18 @@ Note on color specification: Each of the red, green, and blue components for the
 
 Below are my image screen shots when pressing the keys 1-4. No scene is generated when the program starts, you will just see a light yellow canvas. Key 0 will draw an empty scene with just the background color.
 
-![results](scene0.png)
-![results](scene1.png)
-![results](scene2.png)
-![results](scene3.png)
-![results](scene4.png)
+<img src="scene0.png" width="300"> <img src="scene1.png" width="300"> 
+<img src="scene2.png" width="300"> <img src="scene3.png" width="300">
+<img src="scene4.png" width="300">
+
 
 The canvas is a fixed size (the number of pixels in the canvas), specified in the RayTracer object constructor. The constructor also allows you to set the number of virtual pixels that will be ray traced; these should be smaller than the number of pixels in the canvas (ideally simple fractions of them). It will draw larger "pixels" in the canvas so it is filled.  Using smaller numbers of virtual pixels will make debugging faster. 
 
 The sample project is set up with a 500x500 pixel canvas, but only renders 100x100 virtual pixels, resulting in 5x5 canvas pixels for each virtual ray-traced pixel. The sample scenes will look like this with these settings.
 
-![results](scene1-100.png)
-![results](scene2-100.png)
-![results](scene3-100.png)
-![results](scene4-100.png)
+<img src="scene1-100.png" width="300"> <img src="scene2-100.png" width="300"> 
+
+<img src="scene3-100.png" width="300"> <img src="scene4-100.png" width="300">
 
 # Compile and Run
 
