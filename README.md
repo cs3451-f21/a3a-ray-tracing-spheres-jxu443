@@ -3,7 +3,7 @@
 
 This project is to write a ray tracing renderer. I wrote a collection of Javascript functions that, when called, create a 3D scene and produce 2D images of the scene. One of the functions initializes the scene, others create objects, lights and a virtual camera, and one additional function determines the color of a ray cast into the scene, that will be used to render the scene into a 2D image. 
 
-This is the first half of a two-part project. For this first part you will cast eye rays into the scene for each pixel, test these rays for intersection with sphere objects, and then use the the Lambertian shading equation (ambient + diffuse + specular) to find the color for each pixel. In the second half of the project, ![A3b](https://github.com/cs3451-f21/assignment-3b-disks-area-lights-and-distribution-jxu443), I expanded my Ray Tracer to detect intersections between rays and disks. I also expanded my shading function to cast shadows, reflected rays, support area lights, and implement distribution raytracing.
+This is the first half of a two-part project. For this first part you will cast eye rays into the scene for each pixel, test these rays for intersection with sphere objects, and then use the the Lambertian shading equation (ambient + diffuse + specular) to find the color for each pixel. In the second half of the project, [A3b](https://github.com/cs3451-f21/assignment-3b-disks-area-lights-and-distribution-jxu443), I expanded my Ray Tracer to detect intersections between rays and disks. I also expanded my shading function to cast shadows, reflected rays, support area lights, and implement distribution raytracing.
 
 ## Objectives
 
